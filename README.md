@@ -3,8 +3,15 @@
 This repo contains an example of how to collect ditributed tracing for rabbitmq in nodejs
 
 ## Tutorial
+Table of Contents:
+1. [ create application. ](#step1)
+2. [ Add RabbitMq messaging code. ](#step2)
+3. [ Add Opentelemetry tracing ](#step3)
+4. [ Visualize tracing ](#step4)
+5. [ Final notes ](#step5)
 
 ### Step 1 - create application
+<a name="step1"></a>
 
 First lets create a basic node application
 
@@ -27,6 +34,7 @@ app.listen(port, () => {
 This is taken directly from express hello world [`example`](https://expressjs.com/en/starter/hello-world.html).
 
 ### Step 2 - Add RabbitMq messaging code
+<a name="step1"></a>
 
 Now lets add the code we need to publish and consume messages on RabbitMq. for that we will need to install the amqplib library and run a local instance of RabbitMq.
 ```bash
@@ -103,6 +111,8 @@ Recieved message: 'Hello World!'
 ```
 
 ### Step 3 - Add Opentelemetry tracing
+<a name="step3"></a>
+
 So far so good. We can now start examinig our application behavior. For that we will collect our tracing using amqplib instrumentation. Then we will view this tracing using ConsoleSpanExporter, this means the traces will be printed to console.
 
 Install the following packages:
@@ -185,6 +195,8 @@ curl http://localhost:3000
 ```
 
 ### Step 4 - Visualize tracing
+<a name="step4"></a>
+
 Well done! All we have left is to export these traces to a distributed platform so we can view and analyze the behaviour of the application.
 To do that will will use Aspecto platform.
 Lets edit our tracing.js file and add Aspecto exporter. note that for that you will need to get an Aspecto api key. You can get it by creating a [`free acount`](https://www.aspecto.io/pricing/)
@@ -224,6 +236,7 @@ sdk.start()
 Thats it!. Now by running the application and invoking the endpoint once again we can view our tracing in the Aspecto platform. Just login to your account and view the recent traces. Aspecto visualize the tracing as a graph which makes it super convient to understand the application's flow.
 
 ### Final notes:
+<a name="step5"></a>
 Aspecto provides a simple way for wrapping all the instrumentations your node application needs with the Aspecto SDK. Simply import and invoke the following package at the beginig of you code (before all other imports)
 ```javascript
 require('@aspecto/opentelemetry')({
