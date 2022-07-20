@@ -1,0 +1,25 @@
+{
+  "name": "rabbitmq-otel",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node --require './tracing.js' ./bin/www",
+    "start-with-tracing": "node --require './tracing.js' ./bin/www"
+  },
+  "dependencies": {
+    "@aspecto/opentelemetry": "^0.0.137",
+    "@opentelemetry/exporter-collector": "^0.25.0",
+    "@opentelemetry/instrumentation": "^0.30.0",
+    "@opentelemetry/instrumentation-amqplib": "^0.30.0",
+    "@opentelemetry/sdk-node": "^0.30.0",
+    "@opentelemetry/sdk-trace-base": "^1.4.0",
+    "@opentelemetry/semantic-conventions": "^1.4.0",
+    "amqplib": "^0.10.0",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "jade": "~1.11.0",
+    "morgan": "~1.9.1"
+  }
+}
