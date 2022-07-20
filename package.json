@@ -3,8 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./app.js",
-    "start-with-tracing": "node --require './tracing.js' ./bin/www"
+    "start": "node --require './tracing.js' ./app.js"
   },
   "dependencies": {
     "@aspecto/opentelemetry": "^0.0.137",

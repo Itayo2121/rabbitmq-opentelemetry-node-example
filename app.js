@@ -1,38 +1,44 @@
-require('@aspecto/opentelemetry')({
-  aspectoAuth: process.env.ASPECTO_API_KEY
-});
+// require('@aspecto/opentelemetry')({
+//   aspectoAuth: process.env.ASPECTO_API_KEY
+// });
 
 const amqplib = require('amqplib');
 const express = require('express')
 const app = express()
 const port = 3000
 
-const sendRabbitMqMessage = async (message) => {
-  const queue = 'tasks';
-  const conn = await amqplib.connect('amqp://localhost');
+let rabbitMqSetting = {
+  queue: 'tasks'
+};
 
-  const channel = await conn.createChannel();
-  await channel.assertQueue(queue);
-  await channel.sendToQueue(queue, Buffer.from(message));
+const sendRabbitMqMessage = async (message) => {
+  if (!rabbitMqSetting.connection) {
+    rabbitMqSetting.connection = await amqplib.connect('amqp://localhost');
+  }
+  const channel = await rabbitMqSetting.connection.createChannel();
+  await channel.assertQueue(rabbitMqSetting.queue);
+  await channel.sendToQueue(rabbitMqSetting.queue, Buffer.from(message));
 }
 
-const rabbitMqWaitForMessages = async (callback) => {
-  const queue = 'tasks';
-  const conn = await amqplib.connect('amqp://localhost');
-
-  const channel = await conn.createChannel();
-  await channel.assertQueue(queue);
-  await channel.consume(queue, message => {
+const rabbitMqListenForMessages = async (callback) => {
+  if (!rabbitMqSetting.connection) {
+    rabbitMqSetting.connection = await amqplib.connect('amqp://localhost');
+  }
+  const channel = await rabbitMqSetting.connection.createChannel();
+  await channel.assertQueue(rabbitMqSetting.queue);
+  await channel.consume(rabbitMqSetting.queue, message => {
     channel.ack(message)
     callback(message.content.toString())
   });
 }
 
-rabbitMqWaitForMessages(console.log)
+rabbitMqListenForMessages((message) => console.log(`Recieved message: '${message}'`))
 
 app.get('/', (req, res) => {
-  sendRabbitMqMessage(`Sending to rabbitMq - recived request to path: ${req.path}, at ${Date.now()}`);
-  res.send('Hello World!')
+  const message = 'Hello World!'
+  console.log(`Send message: '${message}'`);
+  sendRabbitMqMessage(message);
+  res.send(message)
 })
 
 app.listen(port, () => {
