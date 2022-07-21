@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node --require './tracing.js' ./app.js"
+    "start": "ASPECTO_API_KEY=a311563e-8ece-467c-97dc-6276ef3a7b14 node --require './tracing.js' ./app.js"
   },
   "dependencies": {
     "@aspecto/opentelemetry": "^0.0.137",
