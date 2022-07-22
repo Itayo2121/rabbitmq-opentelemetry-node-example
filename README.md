@@ -172,7 +172,8 @@ const rabbitMqListenToMessages = async (callback) => {
     const q = await channel.assertQueue('');
     // we then bind this queue to the exchange so that every message recieved by the exchanged will be pushed upon the queue and be read by the consumer
     await channel.bindQueue(q.queue, exchange, '');
-    await channel.consume('', (message) => callback(message.content.toString()))
+    // Here we consume all the messages from the unnamed queue we created. Note we are passing the no acknowledge flag. this lets the broker know that it should'nt wait for the consumer to acknowledge that it had recieved the message.
+    await channel.consume('', (message) => callback(message.content.toString()), { noAck: true })
 }
 
 app.listen(port, () => {
@@ -325,8 +326,109 @@ Wow What just happend! Look at all this information we have now. Lets examine it
 
 ### Step 4 - Visualize tracing
 
-Well done! All we have left is to export these traces to a distributed platform so we can view and analyze the behaviour of the application.
-To do that we will use Aspecto.
+Well done! All we have left is to export these traces to a platform where we can view and analyze the behaviour of the application.
+To do that we will use Jaeger.
+Jaeger is an open source project that provides an end-to-end distributed tracing capabilities. You can read about it more in the [following article](https://www.aspecto.io/blog/jaeger-tracing-the-ultimate-guide/).
+
+First lets run a local instance of Jaeger:
+```bash
+docker run -d --name jaeger \
+  -e COLLECTOR_OTLP_ENABLED=true \
+  -p 5775:5775/udp \
+  -p 6831:6831/udp \
+  -p 6832:6832/udp \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 14250:14250 \
+  -p 14268:14268 \
+  -p 14269:14269 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one:1.30
+```
+
+We can view the platforms ui by visiting [http://localhost:16686](http://localhost:16686).
+
+![jaeger-empty](./screenshots/jaeger-empty.png)
+As we can see, there are no traces to view yet. To see traces we need to add an Exporter to export our traces to Jaeger.
+
+We first need to install the following packages:
+
+```bash
+npm install @opentelemetry/exporter-jaeger @opentelemetry/sdk-trace-base
+```
+
+Now Lets edit our tracing.js file and add Jaeger exporter:
+
+```javascript
+/* tracing.js */
+
+const opentelemetry = require("@opentelemetry/sdk-node");
+const { AmqplibInstrumentation } = require('@opentelemetry/instrumentation-amqplib');
+const { SimpleSpanProcessor } = require("@opentelemetry/sdk-trace-base");
+const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
+
+const options = {
+  tags: [], // optional
+  // You can use the default UDPSender
+  host: 'localhost', // optional
+  port: 6832, // optional
+  // OR you can use the HTTPSender as follows
+  // endpoint: 'http://localhost:14268/api/traces',
+  maxPacketSize: 65000 // optional
+}
+const exporter = new JaegerExporter(options);
+
+const sdk = new opentelemetry.NodeSDK({
+  spanProcessor: new SimpleSpanProcessor(exporter),
+  instrumentations: [new AmqplibInstrumentation()],
+  serviceName: process.env.SERVICE
+});
+
+sdk.start()
+```
+
+Note that we added service name to the OpenTelemetry configuration. This will help us ditinguish betwin all the node process running around.
+
+Now lets run the publisher and consumers services:
+
+```bash
+# terminal 1 - publisher
+SERVICE=publisher node -r './tracing.js' publisher.js
+> Publisher listening on port 3000
+
+# terminal 2 - consumer 1
+SERVICE=consumer-1 node -r './tracing.js' ./consumer.js
+> Consumer listening on port 3001
+
+# termianl 3 - consumer 2
+SERVICE=consumer-2 PORT=3002 node -r './tracing.js' consumer.js
+> Consumer listening on port 3002
+```
+
+Invoke the publisher's endpoint:
+
+```bash
+# terminal 4
+curl http://localhost:3000
+```
+
+Lets see our traces in Jaeger UI:
+
+As you can see we now have 3 more services listed in the search input:
+![jaeger-services](./screenshots/jaeger-services.png)
+
+By selecting the publisher service and clicking 'Find Traces' we can 1 Trace with 3 spans created from 3 different services:
+
+![jaeger-spans](./screenshots/jaeger-spans.png)
+
+Clicking on the trace once more will show us the details if the span (depth, total spans) and details about each span:
+
+![jaeger-trace]('./screenshots/jaeger-trace.png')
+
+Thats it we are done. We can clearly see the flow of the application and examine information send and recieved from each of our services.
+
+We can try a different visualization by changing our exporter to Aspecto exporter:
+
 Lets edit our tracing.js file and add Aspecto exporter. note that for that you will need to get an Aspecto api key. You can get it by creating a [`free acount`](https://www.aspecto.io/pricing/)
 
 Install the following packages:
@@ -347,7 +449,7 @@ const { AmqplibInstrumentation } = require('@opentelemetry/instrumentation-amqpl
 const { SimpleSpanProcessor } = require("@opentelemetry/sdk-trace-base");
 const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
 
-const aspectoExporter = new CollectorTraceExporter({
+const exporter = new CollectorTraceExporter({
   url: 'https://otelcol.aspecto.io/v1/trace',
   headers: {
     // Aspecto API-Key is required
@@ -356,14 +458,40 @@ const aspectoExporter = new CollectorTraceExporter({
 })
 
 const sdk = new opentelemetry.NodeSDK({
-  spanProcessor: new SimpleSpanProcessor(aspectoExporter),
+  spanProcessor: new SimpleSpanProcessor(exporter),
   instrumentations: [new AmqplibInstrumentation()]
+  serviceName: process.env.SERVICE
 });
 
 sdk.start()
 ```
 
-Thats it!. Now by running the application and invoking the endpoint once again we can view our tracing in the Aspecto platform. Just login to your account and view the recent traces. Aspecto visualize the tracing as a graph which makes it super convient to understand the application's flow.
+Thats it!. Now by running the application and invoking the endpoint once again:
+
+```bash
+# terminal 1 - publisher
+SERVICE=publisher node -r './tracing.js' publisher.js
+> Publisher listening on port 3000
+
+# terminal 2 - consumer 1
+SERVICE=consumer-1 node -r './tracing.js' ./consumer.js
+> Consumer listening on port 3001
+
+# termianl 3 - consumer 2
+SERVICE=consumer-2 PORT=3002 node -r './tracing.js' consumer.js
+> Consumer listening on port 3002
+```
+
+Invoke the publisher's endpoint:
+
+```bash
+# terminal 4
+curl http://localhost:3000
+```
+
+We can view our tracing in the Aspecto platform. Just login to your account and view the recent traces. Aspecto visualize the tracing as a graph which makes it super convient to understand the application's flow.
+
+[aspecto-tracing](./screenshots/aspecto-tracing.png)
 
 ### Final notes
 

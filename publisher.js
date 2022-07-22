@@ -1,6 +1,6 @@
-// require('@aspecto/opentelemetry')({
-//   aspectoAuth: process.env.ASPECTO_API_KEY
-// });
+require('@aspecto/opentelemetry')({
+  aspectoAuth: process.env.ASPECTO_API_KEY
+});
 
 const amqplib = require('amqplib');
 const express = require('express')

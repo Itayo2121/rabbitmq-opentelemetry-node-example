@@ -1,6 +1,6 @@
-// require('@aspecto/opentelemetry')({
-//   aspectoAuth: process.env.ASPECTO_API_KEY
-// });
+require('@aspecto/opentelemetry')({
+  aspectoAuth: process.env.ASPECTO_API_KEY
+});
 
 const amqplib = require('amqplib');
 const express = require('express')
@@ -18,7 +18,7 @@ const rabbitMqListenToMessages = async (callback) => {
     await channel.assertExchange(exchange, 'fanout')
     const q = await channel.assertQueue('');
     await channel.bindQueue(q.queue, exchange, '');
-    await channel.consume('', (message) => callback(message.content.toString()))
+    await channel.consume('', (message) => callback(message.content.toString()), { noAck: true })
 }
 
 app.listen(port, () => {

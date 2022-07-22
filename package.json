@@ -8,6 +8,7 @@
   "dependencies": {
     "@aspecto/opentelemetry": "^0.0.137",
     "@opentelemetry/exporter-collector": "^0.25.0",
+    "@opentelemetry/exporter-jaeger": "^1.4.0",
     "@opentelemetry/instrumentation": "^0.30.0",
     "@opentelemetry/instrumentation-amqplib": "^0.30.0",
     "@opentelemetry/sdk-node": "^0.30.0",
