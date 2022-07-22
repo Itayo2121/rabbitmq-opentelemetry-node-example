@@ -331,6 +331,7 @@ To do that we will use Jaeger.
 Jaeger is an open source project that provides an end-to-end distributed tracing capabilities. You can read about it more in the [following article](https://www.aspecto.io/blog/jaeger-tracing-the-ultimate-guide/).
 
 First lets run a local instance of Jaeger:
+
 ```bash
 docker run -d --name jaeger \
   -e COLLECTOR_OTLP_ENABLED=true \
@@ -491,7 +492,7 @@ curl http://localhost:3000
 
 We can view our tracing in the Aspecto platform. Just login to your account and view the recent traces. Aspecto visualize the tracing as a graph which makes it super convient to understand the application's flow.
 
-[aspecto-tracing](./screenshots/aspecto-tracing.png)
+![aspecto-tracing](./screenshots/aspecto-tracing.png)
 
 ### Final notes
 
