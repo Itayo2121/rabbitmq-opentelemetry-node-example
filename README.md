@@ -424,7 +424,7 @@ By selecting the publisher service and clicking 'Find Traces' we can 1 Trace wit
 
 Clicking on the trace once more will show us the details if the span (depth, total spans) and details about each span:
 
-![jaeger-trace]('./screenshots/jaeger-trace.png')
+![jaeger-trace](./screenshots/jaeger-trace.png)
 
 Thats it we are done. We can clearly see the flow of the application and examine information send and recieved from each of our services.
 
